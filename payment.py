@@ -124,8 +124,6 @@ class Payment(metaclass=PoolMeta):
         states={'readonly': Eval('state') != 'draft'}, depends=['state'])
     redsys_authorisation_code = fields.Char('Authorisation Code',
         states={'readonly': Eval('state') != 'draft'}, depends=['state'])
-    redsys_method = fields.Function(fields.Char('Payment Gateway Method'),
-        'get_method')
     redsys_gateway_log = fields.Text("Gateway Log", depends=['state'],
         states={'readonly': Eval('state') != 'draft'})
 
@@ -196,6 +194,8 @@ class Payment(metaclass=PoolMeta):
 
 @classmethod
 def redsys_ipn(cls, payment_journal, merchant_parameters, signature):
+    pool = Pool()
+    Payment = pool.get('account.payment')
     """
     Signal Redsys confirmation payment
 
@@ -222,17 +222,16 @@ def redsys_ipn(cls, payment_journal, merchant_parameters, signature):
     merchant_code = payment_journal.redsys_account.merchant_code
     merchant_secret_key = payment_journal.redsys_account.secret_key
 
-    raise
     redsyspayment = None
-    #redsyspayment = Client(business_code=merchant_code,
-    #    secret_key=merchant_secret_key, sandbox=sandbox)
-    #valid_signature = redsyspayment.redsys_check_response(
-    #    signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
+    redsyspayment = Client(business_code=merchant_code,
+        secret_key=merchant_secret_key, sandbox=sandbox)
+    valid_signature = redsyspayment.redsys_check_response(
+        signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
     if not valid_signature:
         #TODO: handle errors in voyager
         return '500'
 
-    #merchant_parameters = redsyspayment.decode_parameters(merchant_parameters)
+    merchant_parameters = redsyspayment.decode_parameters(merchant_parameters)
 
     reference = merchant_parameters.get('Ds_Order')
     authorisation_code = merchant_parameters.get('Ds_AuthorisationCode')
