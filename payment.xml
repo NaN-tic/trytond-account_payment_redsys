@@ -1,0 +1,118 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<tryton>
+    <data>
+        <!-- account.payment.journal -->
+        <record model="ir.ui.view" id="payment_journal_view_form">
+            <field name="model">account.payment.journal</field>
+            <field name="inherit" ref="account_payment.payment_journal_view_form"/>
+            <field name="name">payment_journal_form</field>
+        </record>
+        <!-- account.payment -->
+        <record model="ir.ui.view" id="payment_view_form">
+            <field name="model">account.payment</field>
+            <field name="inherit" ref="account_payment.payment_view_form"/>
+            <field name="name">payment_form</field>
+        </record>
+        <!-- <record model="ir.ui.view" id="payment_view_list">
+            <field name="model">account.payment</field>
+            <field name="inherit" ref="account_payment.payment_view_list"/>
+            <field name="name">payment_list</field>
+        </record>-->
+        <!-- account.payment.redsys.account -->
+        <record model="ir.ui.view" id="account_view_form">
+            <field name="model">account.payment.redsys.account</field>
+            <field name="type">form</field>
+            <field name="name">account_form</field>
+        </record>
+        <record model="ir.ui.view" id="account_view_list">
+            <field name="model">account.payment.redsys.account</field>
+            <field name="type">tree</field>
+            <field name="name">account_list</field>
+        </record>
+
+        <record model="ir.action.act_window" id="act_account_form">
+            <field name="name">Redsys Accounts</field>
+            <field name="res_model">account.payment.redsys.account</field>
+        </record>
+        <record model="ir.action.act_window.view" id="act_account_form_view1">
+            <field name="sequence" eval="10"/>
+            <field name="view" ref="account_view_list"/>
+            <field name="act_window" ref="act_account_form"/>
+        </record>
+        <record model="ir.action.act_window.view" id="act_account_form_view2">
+            <field name="sequence" eval="20"/>
+            <field name="view" ref="account_view_form"/>
+            <field name="act_window" ref="act_account_form"/>
+        </record>
+        <menuitem
+            parent="account_payment.menu_payment_configuration"
+            action="act_account_form"
+            sequence="30"
+            id="menu_account_form"/>
+
+        <record model="ir.model.access" id="access_account">
+            <field name="model"
+                search="[('model', '=', 'account.payment.redsys.account')]"/>
+            <field name="perm_read" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access" id="access_account_account_admin">
+            <field name="model" search="[('model', '=', 'account.payment.redsys.account')]"/>
+            <field name="group" ref="account.group_account_admin"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_delete" eval="True"/>
+        </record>
+        <record model="ir.model.access" id="access_account_payment">
+            <field name="model"
+                search="[('model', '=', 'account.payment.redsys.account')]"/>
+            <field name="group" ref="account_payment.group_payment"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.field.access" id="access_account_secret_key">
+            <field name="field"
+                search="[('name', '=', 'secret_key'), ('model.model', '=', 'account.payment.redsys.account')]"/>
+            <field name="perm_read" eval="False"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.field.access" id="access_account_secret_key_account_admin">
+            <field name="field"
+                search="[('name', '=', 'secret_key'), ('model.model', '=', 'account.payment.redsys.account')]"/>
+            <field name="group" ref="account.group_account_admin"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="True"/>
+            <field name="perm_create" eval="True"/>
+            <field name="perm_delete" eval="True"/>
+        </record>
+        <!-- ir.sequence.type -->
+        <record model="ir.sequence.type" id="sequence_type_payment_redsys">
+            <field name="name">Payment Redsys</field>
+        </record>
+        <record model="ir.sequence.type-res.group"
+            id="sequence_type_payment_redsys_group_admin">
+            <field name="sequence_type" ref="sequence_type_payment_redsys"/>
+            <field name="group" ref="res.group_admin"/>
+        </record>
+        <record model="ir.sequence.type-res.group"
+            id="sequence_type_payment_redsys_group_account_admin">
+            <field name="sequence_type" ref="sequence_type_payment_redsys"/>
+            <field name="group" ref="account.group_account_admin"/>
+        </record>
+        <!-- ir.sequence -->
+        <record model="ir.sequence" id="sequence_payment_redsys">
+            <field name="name">Redsys</field>
+            <field name="sequence_type" ref="sequence_type_payment_redsys"/>
+            <field name="padding">10</field>
+        </record>
+    </data>
+</tryton>

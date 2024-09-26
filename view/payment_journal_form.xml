@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath expr="/form/field[@name='process_method']" position="after">
+        <separator name="redsys_account" string="Redsys" colspan="4"/>
+        <label name="redsys_account"/>
+        <field name="redsys_account"/>
+        <newline/>
+        <label name="journal"/>
+        <field name="journal"/>
+        <label name="journal_writeoff"/>
+        <field name="journal_writeoff"/>
+        <label name="writeoff_amount_percent"/>
+        <field name="writeoff_amount_percent"/>
+        <label name="from_transactions"/>
+        <field name="from_transactions"/>
+        <label name="to_transactions"/>
+        <field name="to_transactions"/>
+        <label name="scheduler"/>
+        <field name="scheduler"/>
+    </xpath>
+</data>
