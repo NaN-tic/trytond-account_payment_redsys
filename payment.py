@@ -22,22 +22,38 @@ class PaymentJournal(metaclass=PoolMeta):
             'required': Eval('process_method') == 'redsys',
             'invisible': Eval('process_method') != 'redsys',
         })
-    journal = fields.Many2One('account.journal', 'Journal', required=True,
-        context={
+    journal = fields.Many2One('account.journal', 'Journal',
+        states={
+            'required': Eval('process_method') == 'redsys',
+            'invisible': Eval('process_method') != 'redsys',
+            }, context={
             'company': Eval('company', -1),
         }, depends=['company'])
     journal_writeoff = fields.Many2One('account.journal', 'Write Off Journal',
-        required=True, context={
+        states={
+            'required': Eval('process_method') == 'redsys',
+            'invisible': Eval('process_method') != 'redsys',
+            }, context={
             'company': Eval('company', -1),
         }, depends=['company'])
     writeoff_amount_percent = fields.Numeric('Write Off (%)', digits=(8, 4),
-        required=True)
+        states={
+            'required': Eval('process_method') == 'redsys',
+            'invisible': Eval('process_method') != 'redsys',
+            })
     from_transactions = fields.DateTime('From Transactions',
-        help='This date is last import (filter)', required=True)
+        help='This date is last import (filter)', states={
+            'required': Eval('process_method') == 'redsys',
+            'invisible': Eval('process_method') != 'redsys',
+            })
     to_transactions = fields.DateTime('To Transactions',
-        help='This date is to import (filter)')
+        help='This date is to import (filter)',states={
+            'invisible': Eval('process_method') != 'redsys',
+            })
     scheduler = fields.Boolean('Scheduler',
-        help='Import transactions from Gateway')
+        help='Import transactions from Gateway',states={
+            'invisible': Eval('process_method') != 'redsys',
+            })
 
     @classmethod
     def __setup__(cls):
