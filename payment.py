@@ -61,39 +61,10 @@ class PaymentJournal(metaclass=PoolMeta):
         redsys_method = ('redsys', 'Redsys')
         if redsys_method not in cls.process_method.selection:
             cls.process_method.selection.append(redsys_method)
-        '''
-        cls._buttons.update({
-                'import_transactions': {},
-            })
-        '''
 
     @staticmethod
     def default_from_transactions():
         return datetime.now()
-
-    '''
-    @classmethod
-    @ModelView.button
-    def import_transactions(self, gateways):
-        """
-        Import Transactions from Gateway APP
-        """
-        for gateway in gateways:
-            import_transaction = getattr(gateway, 'import_transactions_%s' %
-                gateway.method)
-            import_transaction()
-
-    @classmethod
-    def import_gateway(cls):
-        """
-        Import gateways transactions:
-        """
-        gateways = cls.search([
-            ('scheduler', '=', True),
-            ])
-        cls.import_transactions(gateways)
-        return True
-    '''
 
 
 class PaymentGroup(metaclass=PoolMeta):
@@ -104,31 +75,6 @@ class PaymentGroup(metaclass=PoolMeta):
         super().__setup__()
         cls._buttons['succeed']['invisible'] |= (
             Eval('process_method') == 'redsys')
-
-    '''
-    def process_braintree(self):
-        pool = Pool()
-        Payment = pool.get('account.payment')
-        for payment in self.payments:
-            if not payment.braintree_nonce and not payment.braintree_customer:
-                account = payment.journal.braintree_account
-                for customer in payment.party.braintree_customers:
-                    if (customer.braintree_account == account
-                            and customer.braintree_customer_id):
-                        payment.braintree_customer = customer
-                        break
-                else:
-                    raise ProcessError(
-                        gettext(
-                            'account_payment_braintree.msg_no_braintree_nonce',
-                            payment=payment.rec_name))
-        Payment.save(self.payments)
-        Payment.__queue__.braintree_transact(self.payments)
-    '''
-
-
-#class CheckoutMixin:
-#    __slots__ = ()
 
 
 class Payment(metaclass=PoolMeta):
@@ -167,7 +113,6 @@ class Payment(metaclass=PoolMeta):
 
         payment = Payment()
         payment.description = reference
-        #TODO: add missing origins
         payment.origin = origin
         payment.journal = payment_journal
         payment.redsys_reference_gateway = redsys_reference
@@ -184,7 +129,7 @@ class Payment(metaclass=PoolMeta):
         # We set "hardcoded" an amount of 9 when the redsys account is in
         # sandbox mode
         if sandbox:
-            amount = Decimal(9)
+            amount = Decimal(0.01)
 
         values = {
             'DS_MERCHANT_AMOUNT': amount,
@@ -200,10 +145,6 @@ class Payment(metaclass=PoolMeta):
             'DS_MERCHANT_TERMINAL': payment_journal.redsys_account.terminal,
             'DS_MERCHANT_TRANSACTIONTYPE': payment_journal.redsys_account.transaction_type,
             }
-        print(f'VALUES: {values}')
-        print(f'MERCHANT CODE: {merchant_code}')
-        print(f'SECRET KEY: {merchant_secret_key}')
-        print(f'SANDBOX: {sandbox}')
         redsyspayment = Client(business_code=merchant_code,
             secret_key=merchant_secret_key, sandbox=sandbox)
         return redsyspayment.redsys_generate_request(values)
