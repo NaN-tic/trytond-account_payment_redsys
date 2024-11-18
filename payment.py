@@ -79,7 +79,6 @@ class PaymentGroup(metaclass=PoolMeta):
 
 class Payment(metaclass=PoolMeta):
     __name__ = 'account.payment'
-    _rec_name = 'uuid'
 
     redsys_uuid = fields.Char('UUID', readonly=True)
     redsys_reference_gateway = fields.Char('Reference Gateway',
@@ -90,7 +89,7 @@ class Payment(metaclass=PoolMeta):
         states={'readonly': Eval('state') != 'draft'})
 
     @staticmethod
-    def default_uuid():
+    def default_redsys_uuid():
         return '%s' % uuid.uuid4()
 
     @classmethod
