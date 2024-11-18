@@ -6,18 +6,5 @@ this repository contains the full copyright notices and license terms. -->
         <separator name="redsys_account" string="Redsys" colspan="4"/>
         <label name="redsys_account"/>
         <field name="redsys_account"/>
-        <newline/>
-        <label name="journal"/>
-        <field name="journal"/>
-        <label name="journal_writeoff"/>
-        <field name="journal_writeoff"/>
-        <label name="writeoff_amount_percent"/>
-        <field name="writeoff_amount_percent"/>
-        <label name="from_transactions"/>
-        <field name="from_transactions"/>
-        <label name="to_transactions"/>
-        <field name="to_transactions"/>
-        <label name="scheduler"/>
-        <field name="scheduler"/>
     </xpath>
 </data>
