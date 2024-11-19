@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
+this repository contains the full copyright notices and license terms. -->
+<data>
+    <xpath expr="//field[@name='date']" position="after">
+        <group id="redsys" string="Redsys" colspan="4">
+            <label name="redsys_uuid" string="UUID:"/>
+            <field name="redsys_uuid" colspan="3"/>
+            <!-- <label name="redsys_gateway" string="Gateway:"/>
+            <field name="redsys_gateway" colspan="3"/>-->
+            <label name="redsys_authorisation_code" string="Authorisation Code:"/>
+            <field name="redsys_authorisation_code" colspan="3"/>
+            <!-- <label name="redsys_method" string="Method:"/>
+            <field name="redsys_method" colspan="3"/>-->
+        </group>
+    </xpath>
+    <xpath expr="//field[@name='description']" position="after">
+        <separator name="redsys_gateway_log" colspan="4"/>
+        <field name="redsys_gateway_log" colspan="4"/>
+    </xpath>
+</data>

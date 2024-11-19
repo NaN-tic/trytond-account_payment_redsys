@@ -1,0 +1,20 @@
+account_payment_redsys
+======================
+
+The account_payment_redsys module of the Tryton application platform.
+
+Installing
+----------
+
+See INSTALL
+
+
+License
+-------
+
+See LICENSE
+
+Copyright
+---------
+
+See COPYRIGHT
