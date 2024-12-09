@@ -2,11 +2,9 @@
 # this repository contains the full copyright notices and license terms.
 import uuid
 from decimal import Decimal
-from datetime import datetime
-
 from trytond.model import (ModelSQL, ModelView, fields)
 from trytond.pool import PoolMeta, Pool
-from trytond.pyson import Eval, Equal
+from trytond.pyson import Eval
 from redsys import Client
 
 
@@ -59,7 +57,8 @@ class Payment(metaclass=PoolMeta):
 
     @classmethod
     def create_redsys_payment(cls, reference, origin, redsys_reference, party,
-            amount, currency, payment_journal, merchant_url, url_ok, url_ko):
+            amount, currency, payment_journal, merchant_url, url_ok, url_ko,
+            paymethod=None):
         pool = Pool()
         Payment = pool.get('account.payment')
 
@@ -110,7 +109,7 @@ class Payment(metaclass=PoolMeta):
             'DS_MERCHANT_TRANSACTIONTYPE': payment_journal.redsys_account.transaction_type,
             }
         redsyspayment = Client(business_code=merchant_code,
-            secret_key=merchant_secret_key, sandbox=sandbox)
+            secret_key=merchant_secret_key, sandbox=sandbox, paymethod=paymethod)
         return redsyspayment.redsys_generate_request(values)
 
     @classmethod
@@ -149,7 +148,6 @@ class Payment(metaclass=PoolMeta):
         valid_signature = redsyspayment.redsys_check_response(
             signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
         if not valid_signature:
-            #TODO: handle errors in voyager
             return '500'
 
         merchant_parameters = redsyspayment.decode_parameters(merchant_parameters)
@@ -169,25 +167,20 @@ class Payment(metaclass=PoolMeta):
             ], limit=1)
         if payments:
             payment, = payments
-            payment.redsys_authorisation_code = authorisation_code
-            payment.amount = Decimal(amount)/100
-            payment.redsys_gateway_log = log
-            payment.save()
         else:
             payment = Payment()
             payment.description = reference
-            payment.redsys_authorisation_code = authorisation_code
             payment.journal = payment_journal
             payment.redsys_reference_gateway = reference
-            payment.amount = Decimal(amount)/100
-            payment.redsys_gateway_log = log
-            payment.save()
+        payment.redsys_authorisation_code = authorisation_code
+        payment.amount = Decimal(amount)/100
+        payment.redsys_gateway_log = log
+        payment.save()
+
 
         # Process transaction 0000 - 0099: Done
         if int(response) < 100:
-            Payment.confirm([payment])
             return response
-        Payment.cancel([payment])
         return response
 
 
