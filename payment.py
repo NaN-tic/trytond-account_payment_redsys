@@ -180,7 +180,9 @@ class Payment(metaclass=PoolMeta):
 
         # Process transaction 0000 - 0099: Done
         if int(response) < 100:
+            Payment.confirm([payment])
             return response
+        Payment.cancel([payment])
         return response
 
 
