@@ -14,7 +14,7 @@ this repository contains the full copyright notices and license terms. -->
             <field name="redsys_method" colspan="3"/>-->
         </group>
     </xpath>
-    <xpath expr="//field[@name='description']" position="after">
+    <xpath expr="//field[@name='reference']" position="after">
         <separator name="redsys_gateway_log" colspan="4"/>
         <field name="redsys_gateway_log" colspan="4"/>
     </xpath>
