@@ -76,7 +76,7 @@ class Payment(metaclass=PoolMeta):
             Payment.fail(payments)
 
         payment = Payment()
-        payment.description = reference
+        payment.reference = reference
         payment.origin = origin
         payment.journal = payment_journal
         payment.redsys_reference_gateway = redsys_reference
@@ -175,7 +175,7 @@ class Payment(metaclass=PoolMeta):
             payment.save()
         else:
             payment = Payment()
-            payment.description = reference
+            payment.reference = reference
             payment.redsys_authorisation_code = authorisation_code
             payment.journal = payment_journal
             payment.redsys_reference_gateway = reference
