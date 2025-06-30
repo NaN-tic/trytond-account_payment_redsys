@@ -1,0 +1,150 @@
+#
+# SPDX-FileCopyrightText: 2025 juanjo <juanjo.garcia@nan-tic.com>
+msgid ""
+msgstr ""
+"Content-Type: text/plain; charset=UTF-8\n"
+"Last-Translator: juanjo <juanjo.garcia@nan-tic.com>\n"
+"PO-Revision-Date: 2025-06-30 12:28+0200\n"
+"Project-Id-Version: \n"
+"Language-Team: Catalan <kde-i18n-ca@kde.org>\n"
+"Language: ca_ES\n"
+"Content-Transfer-Encoding: 8bit\n"
+"MIME-Version: 1.0\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"X-Generator: Lokalize 25.04.2\n"
+
+msgctxt "field:account.payment,redsys_authorisation_code:"
+msgid "Authorisation Code"
+msgstr "Código de autorización"
+
+msgctxt "field:account.payment,redsys_gateway_log:"
+msgid "Gateway Log"
+msgstr "Registro de puerta de enlace"
+
+msgctxt "field:account.payment,redsys_reference_gateway:"
+msgid "Reference Gateway"
+msgstr "Puerta de enlace de referencia"
+
+msgctxt "field:account.payment,redsys_uuid:"
+msgid "UUID"
+msgstr "UUID"
+
+msgctxt "field:account.payment.journal,redsys_account:"
+msgid "Account"
+msgstr "Cuenta"
+
+msgctxt "field:account.payment.redsys.account,currency:"
+msgid "Currency"
+msgstr "Moneda"
+
+msgctxt "field:account.payment.redsys.account,merchant_code:"
+msgid "Merchant Code"
+msgstr "Número de Comercio"
+
+msgctxt "field:account.payment.redsys.account,merchant_name:"
+msgid "Merchant Name"
+msgstr "Nombre del comerciante"
+
+msgctxt "field:account.payment.redsys.account,mode:"
+msgid "Mode"
+msgstr "Modo"
+
+msgctxt "field:account.payment.redsys.account,name:"
+msgid "Name"
+msgstr "Nombre"
+
+msgctxt "field:account.payment.redsys.account,redsys_currency:"
+msgid "Redsys Currency"
+msgstr "Moneda del terminal"
+
+msgctxt "field:account.payment.redsys.account,secret_key:"
+msgid "Secret Key"
+msgstr "Clave secreta"
+
+msgctxt "field:account.payment.redsys.account,sequence:"
+msgid "Sequence"
+msgstr "Secuencia"
+
+msgctxt "field:account.payment.redsys.account,terminal:"
+msgid "Terminal"
+msgstr "Terminal"
+
+msgctxt "field:account.payment.redsys.account,transaction_type:"
+msgid "Transaction Type"
+msgstr "Tipo de transacción"
+
+msgctxt "help:account.payment.redsys.account,merchant_code:"
+msgid "Redsys Merchant Code"
+msgstr "Número de Comercio de Redsys"
+
+msgctxt "help:account.payment.redsys.account,merchant_name:"
+msgid "Redsys Merchant Name"
+msgstr "Nombre del comerciante de Redsys"
+
+msgctxt "help:account.payment.redsys.account,redsys_currency:"
+msgid "Redsys Currency"
+msgstr "Moneda Redsys"
+
+msgctxt "help:account.payment.redsys.account,secret_key:"
+msgid "Redsys Secret Key"
+msgstr "Clave secreta de Redsys"
+
+msgctxt "help:account.payment.redsys.account,sequence:"
+msgid "Redsys Sequence. Min. 4N. Max. 12 AN"
+msgstr "Secuencia Redsys. Mín. 4 N. Máx. 12 AN."
+
+msgctxt "help:account.payment.redsys.account,terminal:"
+msgid "Redsys Terminal"
+msgstr "Terminal Redsys"
+
+msgctxt "help:account.payment.redsys.account,transaction_type:"
+msgid "Redsys Transaction Type"
+msgstr "Tipo de transacción de Redsys"
+
+msgctxt "model:account.payment.redsys.account,name:"
+msgid "Redsys Account"
+msgstr "Cuenta Redsys"
+
+msgctxt "model:ir.action,name:act_account_form"
+msgid "Redsys Accounts"
+msgstr "Cuentas de Redsys"
+
+msgctxt "model:ir.sequence,name:sequence_payment_redsys"
+msgid "Redsys"
+msgstr "Redsys"
+
+msgctxt "model:ir.sequence.type,name:sequence_type_payment_redsys"
+msgid "Payment Redsys"
+msgstr "Pago Redsys"
+
+msgctxt "model:ir.ui.menu,name:menu_account_form"
+msgid "Redsys Accounts"
+msgstr "Cuentas de Redsys"
+
+msgctxt "selection:account.payment.journal,process_method:"
+msgid "Redsys"
+msgstr "Redsys"
+
+msgctxt "selection:account.payment.redsys.account,mode:"
+msgid "Live"
+msgstr "Producción"
+
+msgctxt "selection:account.payment.redsys.account,mode:"
+msgid "Sandbox"
+msgstr "Pruebas"
+
+msgctxt "view:account.payment.journal:"
+msgid "Redsys"
+msgstr "Redsys"
+
+msgctxt "view:account.payment:"
+msgid "Authorisation Code:"
+msgstr "Código de autorización:"
+
+msgctxt "view:account.payment:"
+msgid "Redsys"
+msgstr "Redsys"
+
+msgctxt "view:account.payment:"
+msgid "UUID:"
+msgstr "UUID:"
