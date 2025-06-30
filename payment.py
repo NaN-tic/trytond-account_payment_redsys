@@ -2,11 +2,10 @@
 # this repository contains the full copyright notices and license terms.
 import uuid
 from decimal import Decimal
-from datetime import datetime
 
 from trytond.model import (ModelSQL, ModelView, fields)
 from trytond.pool import PoolMeta, Pool
-from trytond.pyson import Eval, Equal
+from trytond.pyson import Eval
 from redsys import Client
 
 
@@ -185,9 +184,9 @@ class Payment(metaclass=PoolMeta):
 
         # Process transaction 0000 - 0099: Done
         if int(response) < 100:
-            Payment.confirm([payment])
+            Payment.succeed([payment])
             return response
-        Payment.cancel([payment])
+        Payment.fail([payment])
         return response
 
 
