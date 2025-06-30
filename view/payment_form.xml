@@ -6,12 +6,10 @@ this repository contains the full copyright notices and license terms. -->
         <group id="redsys" string="Redsys" colspan="4">
             <label name="redsys_uuid" string="UUID:"/>
             <field name="redsys_uuid" colspan="3"/>
-            <!-- <label name="redsys_gateway" string="Gateway:"/>
-            <field name="redsys_gateway" colspan="3"/>-->
+            <label name="redsys_reference_gateway"/>
+            <field name="redsys_reference_gateway" colspan="3"/>
             <label name="redsys_authorisation_code" string="Authorisation Code:"/>
             <field name="redsys_authorisation_code" colspan="3"/>
-            <!-- <label name="redsys_method" string="Method:"/>
-            <field name="redsys_method" colspan="3"/>-->
         </group>
     </xpath>
     <xpath expr="//field[@name='reference']" position="after">
