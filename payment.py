@@ -116,6 +116,7 @@ class Payment(metaclass=PoolMeta):
     def redsys_ipn(cls, payment_journal, merchant_parameters, signature):
         pool = Pool()
         Payment = pool.get('account.payment')
+        Group = pool.get('account.payment.group')
         """
         Signal Redsys confirmation payment
 
@@ -148,7 +149,6 @@ class Payment(metaclass=PoolMeta):
         valid_signature = redsyspayment.redsys_check_response(
             signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
         if not valid_signature:
-            #TODO: handle errors in voyager
             return '500'
 
         merchant_parameters = redsyspayment.decode_parameters(merchant_parameters)
@@ -168,25 +168,34 @@ class Payment(metaclass=PoolMeta):
             ], limit=1)
         if payments:
             payment, = payments
-            payment.redsys_authorisation_code = authorisation_code
-            payment.amount = Decimal(amount)/100
-            payment.redsys_gateway_log = log
-            payment.save()
         else:
             payment = Payment()
-            payment.reference = reference
-            payment.redsys_authorisation_code = authorisation_code
+            payment.description = reference
             payment.journal = payment_journal
             payment.redsys_reference_gateway = reference
-            payment.amount = Decimal(amount)/100
-            payment.redsys_gateway_log = log
-            payment.save()
+        payment.redsys_authorisation_code = authorisation_code
+        payment.amount = Decimal(amount)/100
+        payment.redsys_gateway_log = log
+        payment.save()
 
         # Process transaction 0000 - 0099: Done
+        cls.submit([payment])
+        # Create payment group (needed in account.payment)
+        group_values = {
+            'company': payment.company.id,
+            'journal': payment.journal.id,
+            'kind': payment.kind,
+        }
+        group = Group(**group_values)
+        group.save()
+        payment.group = group
+        payment.save()
+        cls.proceed([payment])
+
         if int(response) < 100:
-            Payment.succeed([payment])
+            cls.succeed([payment])
             return response
-        Payment.fail([payment])
+        cls.fail([payment])
         return response
 
 
