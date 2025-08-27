@@ -170,7 +170,7 @@ class Payment(metaclass=PoolMeta):
             payment, = payments
         else:
             payment = Payment()
-            payment.description = reference
+            payment.reference = reference
             payment.journal = payment_journal
             payment.redsys_reference_gateway = reference
         payment.redsys_authorisation_code = authorisation_code
