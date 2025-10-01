@@ -4,7 +4,7 @@ import uuid
 from decimal import Decimal
 from trytond.modules.company.model import (CompanyMultiValueMixin,
     CompanyValueMixin)
-from trytond.model import (ModelSQL, ModelView, fields)
+from trytond.model import (ModelSQL, ModelView, fields, ValueMixin)
 from trytond.pool import PoolMeta, Pool
 from trytond.pyson import Eval
 from redsys import Client
@@ -291,8 +291,10 @@ class Account(ModelSQL, ModelView, CompanyMultiValueMixin):
     def multivalue_model(cls, field):
         pool = Pool()
 
-        if field in {'bank_account', 'partial_account', 'move_journal'}:
+        if field in {'bank_account', 'partial_account'}:
             return pool.get('account.payment.redsys.account.account')
+        if field in {'move_journal'}:
+            return pool.get('account.payment.redsys.account.journal')
         return super().multivalue_model(field)
 
 
@@ -314,5 +316,11 @@ class AccountAccount(ModelSQL, CompanyValueMixin):
             ('party_required', '=', True),
             ('company', '=', Eval('context', {}).get('company', -1)),
         ])
+
+
+class AccountJournal(ModelSQL, ValueMixin):
+    'Account Journal'
+    __name__ = 'account.payment.redsys.account.journal'
+
     move_journal = fields.Many2One('account.journal', 'Move Journal',
         required=True)

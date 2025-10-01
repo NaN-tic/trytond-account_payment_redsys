@@ -11,4 +11,5 @@ def register():
         payment.Payment,
         payment.Account,
         payment.AccountAccount,
+        payment.AccountJournal,
         module='account_payment_redsys', type_='model')
