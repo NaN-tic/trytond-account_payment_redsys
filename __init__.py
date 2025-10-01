@@ -10,8 +10,5 @@ def register():
         payment.PaymentGroup,
         payment.Payment,
         payment.Account,
+        payment.AccountAccount,
         module='account_payment_redsys', type_='model')
-    Pool.register(
-        module='account_payment_redsys', type_='wizard')
-    Pool.register(
-        module='account_payment_redsys', type_='report')
