@@ -5,7 +5,7 @@ from decimal import Decimal
 
 from trytond.model import (ModelSQL, ModelView, fields)
 from trytond.pool import PoolMeta, Pool
-from trytond.pyson import Eval
+from trytond.pyson import Eval, Id
 from redsys import Client
 
 
@@ -224,7 +224,8 @@ class Account(ModelSQL, ModelView):
         #required=True,
         domain=[
             ('company', 'in',
-            [Eval('context', {}).get('company', -1), None]),
+                [Eval('context', {}).get('company', -1), None]),
+            ('sequence_type', '=', Id('account_payment_redsys', 'sequence_type_payment_redsys'))
         ], help='Redsys Sequence. Min. 4N. Max. 12 AN')
 
     @staticmethod
