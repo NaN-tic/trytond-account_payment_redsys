@@ -2,24 +2,36 @@
 <!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
 this repository contains the full copyright notices and license terms. -->
 <form>
+    <label name="bank_account"/>
+    <field name="bank_account"/>
+    <label name="partial_account"/>
+    <field name="partial_account"/>
+    <label name="move_journal"/>
+    <field name="move_journal"/>
+    <label name="mismatch"/>
+    <field name="mismatch" factor="100"/>
+    <separator string="Redsys Parameters" colspan="4" id="redsys_parameters"/>
     <label name="name"/>
-    <field name="name" colspan="3"/>
+    <field name="name"/>
+    <label name="sequence"/>
+    <field name="sequence"/>
     <label name="currency"/>
-    <field name="currency" colspan="3"/>
+    <field name="currency"/>
+    <newline/>
     <label name="mode"/>
     <field name="mode" colspan="3"/>
+    <label name="merchant_name"/>
+    <field name="merchant_name"/>
+    <label name="merchant_code"/>
+    <field name="merchant_code"/>
     <label name="secret_key"/>
     <field name="secret_key" colspan="3"/>
-    <label name="merchant_name"/>
-    <field name="merchant_name" colspan="3"/>
-    <label name="merchant_code"/>
-    <field name="merchant_code" colspan="3"/>
-    <label name="terminal"/>
-    <field name="terminal" colspan="3"/>
-    <label name="redsys_currency"/>
-    <field name="redsys_currency" colspan="3"/>
-    <label name="transaction_type"/>
-    <field name="transaction_type" colspan="3"/>
-    <label name="sequence"/>
-    <field name="sequence" colspan="3"/>
+    <group colspan="4" col="-1" id="redsys_parameters">
+        <label name="terminal"/>
+        <field name="terminal" colspan="3"/>
+        <label name="redsys_currency"/>
+        <field name="redsys_currency" colspan="3"/>
+        <label name="transaction_type"/>
+        <field name="transaction_type" colspan="3"/>
+    </group>
 </form>
