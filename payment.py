@@ -58,7 +58,8 @@ class Payment(metaclass=PoolMeta):
 
     @classmethod
     def create_redsys_payment(cls, reference, origin, redsys_reference, party,
-            amount, currency, payment_journal, merchant_url, url_ok, url_ko):
+            amount, currency, payment_journal, merchant_url, url_ok, url_ko,
+            paymethod=None):
         pool = Pool()
         Payment = pool.get('account.payment')
 
@@ -108,8 +109,8 @@ class Payment(metaclass=PoolMeta):
             'DS_MERCHANT_TERMINAL': payment_journal.redsys_account.terminal,
             'DS_MERCHANT_TRANSACTIONTYPE': payment_journal.redsys_account.transaction_type,
             }
-        redsyspayment = Client(business_code=merchant_code,
-            secret_key=merchant_secret_key, sandbox=sandbox)
+        redsyspayment = Client(business_code=merchant_code, sandbox=sandbox,
+            secret_key=merchant_secret_key, paymethod=paymethod)
         return redsyspayment.redsys_generate_request(values)
 
     @classmethod
