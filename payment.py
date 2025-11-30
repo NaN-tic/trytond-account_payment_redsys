@@ -2,8 +2,9 @@
 # this repository contains the full copyright notices and license terms.
 import uuid
 from decimal import Decimal
-
-from trytond.model import (ModelSQL, ModelView, fields)
+from trytond.modules.company.model import (CompanyMultiValueMixin,
+    CompanyValueMixin)
+from trytond.model import (ModelSQL, ModelView, fields, ValueMixin)
 from trytond.pool import PoolMeta, Pool
 from trytond.pyson import Eval, Id
 from redsys import Client
@@ -77,6 +78,7 @@ class Payment(metaclass=PoolMeta):
 
         payment = Payment()
         payment.description = reference
+        payment.kind = 'receivable'
         payment.origin = origin
         payment.journal = payment_journal
         payment.redsys_reference_gateway = redsys_reference
@@ -112,6 +114,34 @@ class Payment(metaclass=PoolMeta):
         redsyspayment = Client(business_code=merchant_code, sandbox=sandbox,
             secret_key=merchant_secret_key, paymethod=paymethod)
         return redsyspayment.redsys_generate_request(values)
+
+    def generate_account_move(self):
+        pool = Pool()
+        AccountMove = pool.get('account.move')
+        AccountMoveLine = pool.get('account.move.line')
+
+        move = AccountMove()
+        move.origin = self
+        move.date = self.date
+        move.journal = self.journal.redsys_account.move_journal
+        move.save()
+        #Debe
+        line_debit = AccountMoveLine()
+        line_debit.move = move
+        line_debit.on_change_move()
+        line_debit.account = self.journal.redsys_account.bank_account
+        line_debit.date = self.date
+        line_debit.debit = self.amount
+        #Haber
+        line_credit = AccountMoveLine()
+        line_credit.move = move
+        line_credit.on_change_move()
+        line_credit.account = self.journal.redsys_account.partial_account
+        line_credit.party = self.party
+        line_credit.date = self.date
+        line_credit.credit = self.amount
+        AccountMoveLine.save([line_debit, line_credit])
+        move.post()
 
     @classmethod
     def redsys_ipn(cls, payment_journal, merchant_parameters, signature):
@@ -182,6 +212,8 @@ class Payment(metaclass=PoolMeta):
         # Process transaction 0000 - 0099: Done
         cls.submit([payment])
         # Create payment group (needed in account.payment)
+        # TODO: The group is optional in version 7.6 and above:
+        # https://foss.heptapod.net/tryton/tryton/-/commit/55db7836e13205b986ba644017973ba1e2024bd6
         group_values = {
             'company': payment.company.id,
             'journal': payment.journal.id,
@@ -194,13 +226,14 @@ class Payment(metaclass=PoolMeta):
         cls.proceed([payment])
 
         if int(response) < 100:
+            payment.generate_account_move()
             cls.succeed([payment])
             return response
         cls.fail([payment])
         return response
 
 
-class Account(ModelSQL, ModelView):
+class Account(ModelSQL, ModelView, CompanyMultiValueMixin):
     "Redsys Account"
     __name__ = 'account.payment.redsys.account'
 
@@ -222,17 +255,74 @@ class Account(ModelSQL, ModelView):
     transaction_type = fields.Integer('Transaction Type', required=True,
         help='Redsys Transaction Type')
     sequence = fields.Many2One('ir.sequence', 'Sequence',
-        #required=True,
         domain=[
             ('company', 'in',
                 [Eval('context', {}).get('company', -1), None]),
             ('sequence_type', '=', Id('account_payment_redsys', 'sequence_type_payment_redsys'))
         ], help='Redsys Sequence. Min. 4N. Max. 12 AN')
+    mismatch = fields.Numeric('Mismatch (%)', digits=(8, 4),
+        required=True)
+    bank_account = fields.MultiValue(
+        fields.Many2One('account.account', 'Bank Account',
+        domain=[
+            ('closed', '!=', True),
+            ('type', '!=', None),
+            ('party_required', '=', False),
+            ('company', '=', Eval('context', {}).get('company', -1)),
+        ], required=True))
+    partial_account = fields.MultiValue(
+        fields.Many2One('account.account', 'Partial Account',
+        domain=[
+            ('closed', '!=', True),
+            ('type.receivable', '=', True),
+            ('party_required', '=', True),
+            ('company', '=', Eval('context', {}).get('company', -1)),
+        ]))
+    move_journal = fields.MultiValue(
+        fields.Many2One('account.journal', 'Move Journal', required=True))
 
     @staticmethod
     def default_mode():
         return 'live'
 
-    #TODO: handle operations
+    @staticmethod
+    def default_mismatch():
+        return 0
 
-# TODO: create functions to that voyager can use
+    @classmethod
+    def multivalue_model(cls, field):
+        pool = Pool()
+
+        if field in {'bank_account', 'partial_account'}:
+            return pool.get('account.payment.redsys.account.account')
+        if field in {'move_journal'}:
+            return pool.get('account.payment.redsys.account.journal')
+        return super().multivalue_model(field)
+
+
+class AccountAccount(ModelSQL, CompanyValueMixin):
+    'Account Account'
+    __name__ = 'account.payment.redsys.account.account'
+
+    bank_account = fields.Many2One('account.account', 'Bank Account',
+        domain=[
+            ('closed', '!=', True),
+            ('type', '!=', None),
+            ('party_required', '=', False),
+            ('company', '=', Eval('context', {}).get('company', -1)),
+        ], required=True)
+    partial_account = fields.Many2One('account.account', 'Partial Account',
+        domain=[
+            ('closed', '!=', True),
+            ('type.receivable', '=', True),
+            ('party_required', '=', True),
+            ('company', '=', Eval('context', {}).get('company', -1)),
+        ])
+
+
+class AccountJournal(ModelSQL, ValueMixin):
+    'Account Journal'
+    __name__ = 'account.payment.redsys.account.journal'
+
+    move_journal = fields.Many2One('account.journal', 'Move Journal',
+        required=True)
