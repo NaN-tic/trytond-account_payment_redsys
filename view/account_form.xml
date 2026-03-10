@@ -2,12 +2,6 @@
 <!-- This file is part of Tryton.  The COPYRIGHT file at the top level of
 this repository contains the full copyright notices and license terms. -->
 <form>
-    <label name="bank_account"/>
-    <field name="bank_account"/>
-    <label name="partial_account"/>
-    <field name="partial_account"/>
-    <label name="move_journal"/>
-    <field name="move_journal"/>
     <label name="mismatch"/>
     <field name="mismatch" factor="100"/>
     <separator string="Redsys Parameters" colspan="4" id="redsys_parameters"/>
