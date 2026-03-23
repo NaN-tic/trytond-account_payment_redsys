@@ -14,6 +14,10 @@ msgctxt "field:account.payment,redsys_reference_gateway:"
 msgid "Reference Gateway"
 msgstr "Puerta de enlace de referencia"
 
+msgctxt "field:account.payment,redsys_refunds:"
+msgid "Refunds"
+msgstr "Reembolsos"
+
 msgctxt "field:account.payment,redsys_uuid:"
 msgid "UUID"
 msgstr "UUID"

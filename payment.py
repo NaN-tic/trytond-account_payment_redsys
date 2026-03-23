@@ -54,6 +54,9 @@ class Payment(metaclass=PoolMeta):
         states={'readonly': Eval('state') != 'draft'}, depends=['state'])
     redsys_gateway_log = fields.Text("Gateway Log", depends=['state'],
         states={'readonly': Eval('state') != 'draft'})
+    redsys_refunds = fields.One2Many(
+        'account.payment.redsys.refund', 'payment', "Refunds",
+        states={ 'invisible': Eval('process_method') != 'redsys' })
 
     @staticmethod
     def default_redsys_uuid():
