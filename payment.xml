@@ -105,25 +105,25 @@ this repository contains the full copyright notices and license terms. -->
             <field name="name">refund_list</field>
         </record>
 
-        <record model="ir.action.act_window" id="act_refund_form">
+        <record model="ir.action.act_window" id="act_refund">
             <field name="name">Redsys Refunds</field>
             <field name="res_model">account.payment.redsys.refund</field>
         </record>
-        <record model="ir.action.act_window.view" id="act_refund_form_view1">
+        <record model="ir.action.act_window.view" id="act_refund_view_list">
             <field name="sequence" eval="10"/>
             <field name="view" ref="refund_view_list"/>
-            <field name="act_window" ref="act_refund_form"/>
+            <field name="act_window" ref="act_refund"/>
         </record>
-        <record model="ir.action.act_window.view" id="act_refund_form_view2">
+        <record model="ir.action.act_window.view" id="act_refund_view_form">
             <field name="sequence" eval="20"/>
             <field name="view" ref="refund_view_form"/>
-            <field name="act_window" ref="act_refund_form"/>
+            <field name="act_window" ref="act_refund"/>
         </record>
         <menuitem
-            parent="menu_account_form"
-            action="act_refund_form"
+            parent="account_payment.menu_payment_configuration"
+            action="act_refund"
             sequence="30"
-            id="menu_refund_form"/>
+            id="menu_refund"/>
 
         <record model="ir.model.button" id="refund_draft_button">
             <field name="model">account.payment.redsys.refund</field>
@@ -140,9 +140,6 @@ this repository contains the full copyright notices and license terms. -->
             <field name="name">fail</field>
             <field name="string">Fail</field>
         </record>
-        <record model="ir.message" id="msg_refund_invalid_signature">
-            <field name="text">The refund response returned by Redsys has an invalid signature and could not be validated.</field>
-        </record>
 
         <record model="ir.model.access" id="access_refund">
             <field name="model">account.payment.redsys.refund</field>
@@ -154,6 +151,14 @@ this repository contains the full copyright notices and license terms. -->
         <record model="ir.model.access" id="access_refund_payment">
             <field name="model">account.payment.redsys.refund</field>
             <field name="group" ref="account_payment.group_payment"/>
+            <field name="perm_read" eval="True"/>
+            <field name="perm_write" eval="False"/>
+            <field name="perm_create" eval="False"/>
+            <field name="perm_delete" eval="False"/>
+        </record>
+        <record model="ir.model.access" id="access_refund_payment_admin">
+            <field name="model">account.payment.redsys.refund</field>
+            <field name="group" ref="account.group_account_admin"/>
             <field name="perm_read" eval="True"/>
             <field name="perm_write" eval="True"/>
             <field name="perm_create" eval="True"/>

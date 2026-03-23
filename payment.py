@@ -384,7 +384,6 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
             ('draft', 'succeeded'),
             ('draft', 'failed'),
             ('succeeded', 'draft'),
-            ('failed', 'draft'),
             ))
         cls._buttons.update({
             'draft': {
