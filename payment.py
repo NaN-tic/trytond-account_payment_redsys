@@ -345,14 +345,14 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
         domain=[
             ('process_method', '=', 'redsys'),
             ('redsys_reference_gateway', '!=', None),
-            ('redsys_authorisation_code', '!=', None),
+            ('state', '=', 'succeeded'),
             ],
         states={
             'readonly': Eval('state') != 'draft',
             })
     reason = fields.Selection([
         (None, ""),
-        ('invalid', 'Invalid Payment'),
+        ('invalid', 'Invalid Refund'),
         ('requested_by_customer', "Requested by Customer"),
         ], "Reason", states={
             'readonly': Eval('state') != 'draft',
@@ -363,18 +363,17 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
         ('failed', "Failed"),
         ], "State", readonly=True, sort=False)
 
-    redsys_error_message = fields.Char("Redsys Error Message", readonly=True,
-        states={
-            'invisible': (
-                ~Eval('redsys_error_message')
-                | (Eval('state') == 'succeeded')),
-            })
+    redsys_error_message = fields.Text("Redsys Error Message", readonly=True,
+        states={ 'invisible': Eval('state') == 'succeeded' })
     redsys_error_code = fields.Char("Redsys Error Code", readonly=True,
-        states={
-            'invisible': (
-                ~Eval('redsys_error_code')
-                | (Eval('state') == 'succeeded')),
-            })
+        states={ 'invisible': Eval('state') == 'succeeded' })
+
+    currency = fields.Function(
+        fields.Many2One('currency.currency', "Currency"),
+        'on_change_with_currency')
+    company = fields.Function(
+        fields.Many2One('company.company', "Company"),
+        'on_change_with_company')
 
     @classmethod
     def __setup__(cls):
@@ -428,3 +427,11 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
     @Workflow.transition('failed')
     def fail(cls, refunds):
         pass
+
+    @fields.depends('payment', '_parent_payment.currency')
+    def on_change_with_currency(self, name=None):
+        return self.payment.currency if self.payment else None
+
+    @fields.depends('payment', '_parent_payment.company')
+    def on_change_with_company(self, name=None):
+        return self.payment.company if self.payment else None

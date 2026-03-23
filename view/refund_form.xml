@@ -6,14 +6,23 @@ this repository contains the full copyright notices and license terms. -->
     <field name="payment"/>
     <label name="reason"/>
     <field name="reason"/>
+    <label name="currency"/>
+    <field name="currency"/>
+    <label name="company"/>
+    <field name="company"/>
+
+    <notebook>
+        <page name="redsys_error_code" string="Error">
+            <label name="redsys_error_code"/>
+            <field name="redsys_error_code" xexpand="0" xalign="0"/>
+            <newline/>
+            <label name="redsys_error_message"/>
+            <field name="redsys_error_message" colspan="3"/>
+        </page>
+    </notebook>
+
     <label name="state"/>
     <field name="state"/>
-    <label name="redsys_error_message"/>
-    <field name="redsys_error_message" colspan="3"/>
-    <label name="redsys_error_code"/>
-    <field name="redsys_error_code"/>
-    <label name="redsys_error_param"/>
-    <field name="redsys_error_param"/>
     <group col="-1" colspan="2" id="buttons">
         <button name="draft"/>
         <button name="succeed"/>
