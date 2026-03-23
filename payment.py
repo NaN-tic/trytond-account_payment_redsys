@@ -228,7 +228,7 @@ class Payment(metaclass=PoolMeta):
         if amount == sale.total_amount:
             return True
 
-        self.cancel_redsys_payment() # TODO:
+        self.__queue__.cancel_redsys_payment()
         return False
 
     def cancel_redsys_payment(self, transaction_type='45'): # Cancellation of authorization (payment)
