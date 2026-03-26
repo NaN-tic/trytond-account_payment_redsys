@@ -266,7 +266,8 @@ class Payment(metaclass=PoolMeta):
             'Ds_MerchantParameters': request['Ds_MerchantParameters'],
         }
         try:
-            response = requests.post(request['Ds_Redsys_Url'], data=data)
+            response = requests.post(request['Ds_Redsys_Url'], data=data,
+                timeout=60)
             response.raise_for_status()
         except requests.exceptions.RequestException as e:
             refund.redsys_error_message = str(e)
