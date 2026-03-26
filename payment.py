@@ -1,11 +1,15 @@
 # This file is part of Tryton.  The COPYRIGHT file at the top level of
 # this repository contains the full copyright notices and license terms.
 import uuid
+import json
+import requests
 from decimal import Decimal
+from trytond.i18n import gettext
 from trytond.modules.company.model import CompanyMultiValueMixin
-from trytond.model import ModelSQL, ModelView, fields
+from trytond.model import ModelSQL, ModelView, Workflow, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.pyson import Eval, Id
+from trytond.transaction import Transaction
 from redsys import Client
 
 
@@ -30,7 +34,6 @@ class PaymentJournal(metaclass=PoolMeta):
             cls.process_method.selection.append(redsys_method)
 
 
-
 class PaymentGroup(metaclass=PoolMeta):
     __name__ = 'account.payment.group'
 
@@ -51,10 +54,23 @@ class Payment(metaclass=PoolMeta):
         states={'readonly': Eval('state') != 'draft'}, depends=['state'])
     redsys_gateway_log = fields.Text("Gateway Log", depends=['state'],
         states={'readonly': Eval('state') != 'draft'})
+    redsys_refunds = fields.One2Many(
+        'account.payment.redsys.refund', 'payment', "Refunds",
+        states={ 'invisible': Eval('process_method') != 'redsys' })
 
     @staticmethod
     def default_redsys_uuid():
         return '%s' % uuid.uuid4()
+
+    @staticmethod
+    def get_redsys_client(payment_journal, paymethod=None):
+        sandbox = (payment_journal.redsys_account.mode == 'sandbox')
+
+        merchant_code = payment_journal.redsys_account.merchant_code
+        merchant_secret_key = payment_journal.redsys_account.secret_key
+
+        return Client(sandbox=sandbox, paymethod=paymethod,
+            business_code=merchant_code, secret_key=merchant_secret_key)
 
     @classmethod
     def create_redsys_payment(cls, reference, origin, redsys_reference, party,
@@ -87,7 +103,6 @@ class Payment(metaclass=PoolMeta):
         payment.save()
 
         merchant_code = payment_journal.redsys_account.merchant_code
-        merchant_secret_key = payment_journal.redsys_account.secret_key
 
         # In the redsys documentation says that if we are doing tests in the
         # sandbox enviroment the maximum amount is 10.
@@ -110,8 +125,8 @@ class Payment(metaclass=PoolMeta):
             'DS_MERCHANT_TERMINAL': payment_journal.redsys_account.terminal,
             'DS_MERCHANT_TRANSACTIONTYPE': payment_journal.redsys_account.transaction_type,
             }
-        redsyspayment = Client(business_code=merchant_code, sandbox=sandbox,
-            secret_key=merchant_secret_key, paymethod=paymethod)
+
+        redsyspayment = cls.get_redsys_client(payment_journal, paymethod)
         return redsyspayment.redsys_generate_request(values)
 
     @classmethod
@@ -138,16 +153,7 @@ class Payment(metaclass=PoolMeta):
             - Ds_Currency
             - Ds_Hour
         """
-        sandbox = False
-        if payment_journal.redsys_account.mode == 'sandbox':
-            sandbox = True
-
-        merchant_code = payment_journal.redsys_account.merchant_code
-        merchant_secret_key = payment_journal.redsys_account.secret_key
-
-        redsyspayment = None
-        redsyspayment = Client(business_code=merchant_code,
-            secret_key=merchant_secret_key, sandbox=sandbox)
+        redsyspayment = cls.get_redsys_client(payment_journal)
         valid_signature = redsyspayment.redsys_check_response(
             signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
         if not valid_signature:
@@ -198,9 +204,100 @@ class Payment(metaclass=PoolMeta):
 
         if int(response) < 100:
             cls.succeed([payment])
-            return response
-        cls.fail([payment])
+            if not payment.__valid_redsys_payment(merchant_parameters):
+                return '500'
+        else:
+            cls.fail([payment])
         return response
+
+    def __valid_redsys_payment(self, merchant_parameters):
+        pool = Pool()
+        Sale = pool.get('sale.sale')
+
+        transaction = Transaction()
+
+        sale = self.origin
+        amount = merchant_parameters.get('Ds_Amount', 0)
+        amount = Decimal(amount) / 100
+
+        # On draft state, some amounts are not computed.
+        if sale.state == 'draft':
+            with transaction.set_context(_skip_warnings=True):
+                Sale.quote((sale,))
+
+        if amount == sale.total_amount:
+            return True
+
+        self.__queue__.cancel_redsys_payment()
+        return False
+
+    def cancel_redsys_payment(self, transaction_type='45'): # Cancellation of authorization (payment)
+        pool = Pool()
+        Refund = pool.get('account.payment.redsys.refund')
+
+        merchant_code = self.journal.redsys_account.merchant_code
+        sandbox = (self.journal.redsys_account.mode == 'sandbox')
+
+        # In the redsys documentation says that if we are doing tests in the
+        # sandbox enviroment the maximum amount is 10.
+        # We set "hardcoded" an amount of 9 when the redsys account is in
+        # sandbox mode
+        if sandbox:
+            amount = Decimal(0.01)
+        else:
+            amount = self.amount
+
+        values = {
+            'DS_MERCHANT_ORDER': self.redsys_reference_gateway,
+            'DS_MERCHANT_MERCHANTCODE': merchant_code,
+            'DS_MERCHANT_TERMINAL': self.journal.redsys_account.terminal,
+            'DS_MERCHANT_TRANSACTIONTYPE': transaction_type,
+            'DS_MERCHANT_CURRENCY': self.journal.redsys_account.redsys_currency,
+            'DS_MERCHANT_AMOUNT': amount,
+            }
+
+        refund = Refund(payment=self, state='draft', reason='invalid')
+
+        client = self.get_redsys_client(self.journal)
+        request = client.redsys_generate_reversal_request(values)
+        data = {
+            'Ds_Signature': request['Ds_Signature'],
+            'Ds_SignatureVersion': request['Ds_SignatureVersion'],
+            'Ds_MerchantParameters': request['Ds_MerchantParameters'],
+        }
+        try:
+            response = requests.post(request['Ds_Redsys_Url'], data=data,
+                timeout=60)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            refund.redsys_error_message = str(e)
+            refund.redsys_error_code = e.response.status_code
+            Refund.fail((refund,))
+            return refund
+
+        information = json.loads(response.text)
+        signature = information['Ds_Signature']
+        merchant_parameters = information['Ds_MerchantParameters']
+
+        valid_signature = client.redsys_check_response(
+            signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
+        if not valid_signature:
+            refund.redsys_error_message = gettext(
+                'account_payment_redsys.msg_refund_invalid_signature')
+            refund.redsys_error_code = 'invalid_signature'
+            Refund.fail((refund,))
+            return refund
+
+        merchant_parameters = client.decode_parameters(merchant_parameters)
+        ds_response = merchant_parameters['Ds_Response']
+
+        if ds_response != '0400':
+            refund.redsys_error_message = merchant_parameters['Ds_Response_Description']
+            refund.redsys_error_code = ds_response
+            Refund.fail((refund,))
+        else:
+            Refund.succeed((refund,))
+        return refund
 
 
 class Account(ModelSQL, ModelView, CompanyMultiValueMixin):
@@ -242,3 +339,103 @@ class Account(ModelSQL, ModelView, CompanyMultiValueMixin):
     @staticmethod
     def default_mismatch():
         return 0
+
+
+class RedsysRefund(Workflow, ModelSQL, ModelView):
+    "Redsys Refund"
+    __name__ = 'account.payment.redsys.refund'
+
+    payment = fields.Many2One('account.payment', 'Payment', required=True,
+        domain=[
+            ('process_method', '=', 'redsys'),
+            ('redsys_reference_gateway', '!=', None),
+            ('state', '=', 'succeeded'),
+            ],
+        states={
+            'readonly': Eval('state') != 'draft',
+            })
+    reason = fields.Selection([
+        (None, ""),
+        ('invalid', 'Invalid Refund'),
+        ('requested_by_customer', "Requested by Customer"),
+        ], "Reason", states={
+            'readonly': Eval('state') != 'draft',
+            })
+    state = fields.Selection([
+        ('draft', "Draft"),
+        ('succeeded', "Succeeded"),
+        ('failed', "Failed"),
+        ], "State", readonly=True, sort=False)
+
+    redsys_error_message = fields.Text("Redsys Error Message", readonly=True,
+        states={ 'invisible': Eval('state') == 'succeeded' })
+    redsys_error_code = fields.Char("Redsys Error Code", readonly=True,
+        states={ 'invisible': Eval('state') == 'succeeded' })
+
+    currency = fields.Function(
+        fields.Many2One('currency.currency', "Currency"),
+        'on_change_with_currency')
+    company = fields.Function(
+        fields.Many2One('company.company', "Company"),
+        'on_change_with_company')
+
+    @classmethod
+    def __setup__(cls):
+        super().__setup__()
+        cls.__access__.add('payment')
+        cls._transitions |= set((
+            ('draft', 'succeeded'),
+            ('draft', 'failed'),
+            ('succeeded', 'draft'),
+            ))
+        cls._buttons.update({
+            'draft': {
+                'invisible': Eval('state') == 'draft',
+                'icon': 'tryton-back',
+                'depends': ['state'],
+                },
+            'succeed': {
+                'invisible': Eval('state') != 'draft',
+                'icon': 'tryton-forward',
+                'depends': ['state'],
+                },
+            'fail': {
+                'invisible': Eval('state') != 'draft',
+                'icon': 'tryton-cancel',
+                'depends': ['state'],
+                },
+            })
+
+    @staticmethod
+    def default_state():
+        return 'draft'
+
+    @staticmethod
+    def default_reason():
+        return 'requested_by_customer'
+
+    @classmethod
+    @ModelView.button
+    @Workflow.transition('draft')
+    def draft(cls, refunds):
+        pass
+
+    @classmethod
+    @ModelView.button
+    @Workflow.transition('succeeded')
+    def succeed(cls, refunds):
+        pass
+
+    @classmethod
+    @ModelView.button
+    @Workflow.transition('failed')
+    def fail(cls, refunds):
+        pass
+
+    @fields.depends('payment', '_parent_payment.currency')
+    def on_change_with_currency(self, name=None):
+        return self.payment.currency if self.payment else None
+
+    @fields.depends('payment', '_parent_payment.company')
+    def on_change_with_company(self, name=None):
+        return self.payment.company if self.payment else None

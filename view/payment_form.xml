@@ -16,4 +16,9 @@ this repository contains the full copyright notices and license terms. -->
         <separator name="redsys_gateway_log" colspan="4"/>
         <field name="redsys_gateway_log" colspan="4"/>
     </xpath>
+    <xpath expr="//page[@id='description']" position="after">
+        <page name="redsys_refunds" col="1">
+            <field name="redsys_refunds"/>
+        </page>
+    </xpath>
 </data>
