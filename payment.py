@@ -213,6 +213,7 @@ class Payment(metaclass=PoolMeta):
     def __valid_redsys_payment(self, merchant_parameters):
         pool = Pool()
         Sale = pool.get('sale.sale')
+        Refund = pool.get('account.payment.redsys.refund')
 
         transaction = Transaction()
 
@@ -228,76 +229,11 @@ class Payment(metaclass=PoolMeta):
         if amount == sale.total_amount:
             return True
 
-        self.__queue__.cancel_redsys_payment()
-        return False
-
-    def cancel_redsys_payment(self, transaction_type='45'): # Cancellation of authorization (payment)
-        pool = Pool()
-        Refund = pool.get('account.payment.redsys.refund')
-
-        merchant_code = self.journal.redsys_account.merchant_code
-        sandbox = (self.journal.redsys_account.mode == 'sandbox')
-
-        # In the redsys documentation says that if we are doing tests in the
-        # sandbox enviroment the maximum amount is 10.
-        # We set "hardcoded" an amount of 9 when the redsys account is in
-        # sandbox mode
-        if sandbox:
-            amount = Decimal(0.01)
-        else:
-            amount = self.amount
-
-        values = {
-            'DS_MERCHANT_ORDER': self.redsys_reference_gateway,
-            'DS_MERCHANT_MERCHANTCODE': merchant_code,
-            'DS_MERCHANT_TERMINAL': self.journal.redsys_account.terminal,
-            'DS_MERCHANT_TRANSACTIONTYPE': transaction_type,
-            'DS_MERCHANT_CURRENCY': self.journal.redsys_account.redsys_currency,
-            'DS_MERCHANT_AMOUNT': amount,
-            }
-
         refund = Refund(payment=self, state='draft', reason='invalid')
+        refund.save()
+        refund.__queue__.cancel_redsys_payment()
 
-        client = self.get_redsys_client(self.journal)
-        request = client.redsys_generate_reversal_request(values)
-        data = {
-            'Ds_Signature': request['Ds_Signature'],
-            'Ds_SignatureVersion': request['Ds_SignatureVersion'],
-            'Ds_MerchantParameters': request['Ds_MerchantParameters'],
-        }
-        try:
-            response = requests.post(request['Ds_Redsys_Url'], data=data,
-                timeout=60)
-            response.raise_for_status()
-        except requests.exceptions.RequestException as e:
-            refund.redsys_error_message = str(e)
-            refund.redsys_error_code = e.response.status_code
-            Refund.fail((refund,))
-            return refund
-
-        information = json.loads(response.text)
-        signature = information['Ds_Signature']
-        merchant_parameters = information['Ds_MerchantParameters']
-
-        valid_signature = client.redsys_check_response(
-            signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
-        if not valid_signature:
-            refund.redsys_error_message = gettext(
-                'account_payment_redsys.msg_refund_invalid_signature')
-            refund.redsys_error_code = 'invalid_signature'
-            Refund.fail((refund,))
-            return refund
-
-        merchant_parameters = client.decode_parameters(merchant_parameters)
-        ds_response = merchant_parameters['Ds_Response']
-
-        if ds_response != '0400':
-            refund.redsys_error_message = merchant_parameters['Ds_Response_Description']
-            refund.redsys_error_code = ds_response
-            Refund.fail((refund,))
-        else:
-            Refund.succeed((refund,))
-        return refund
+        return False
 
 
 class Account(ModelSQL, ModelView, CompanyMultiValueMixin):
@@ -439,3 +375,70 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
     @fields.depends('payment', '_parent_payment.company')
     def on_change_with_company(self, name=None):
         return self.payment.company if self.payment else None
+
+    def cancel_redsys_payment(self, transaction_type='45'): # Cancellation of authorization (payment)
+        pool = Pool()
+        Refund = pool.get('account.payment.redsys.refund')
+
+        payment = self.payment
+        merchant_code = payment.journal.redsys_account.merchant_code
+        sandbox = (payment.journal.redsys_account.mode == 'sandbox')
+
+        # In the redsys documentation says that if we are doing tests in the
+        # sandbox enviroment the maximum amount is 10.
+        # We set "hardcoded" an amount of 9 when the redsys account is in
+        # sandbox mode
+        if sandbox:
+            amount = Decimal(0.01)
+        else:
+            amount = payment.amount
+
+        values = {
+            'DS_MERCHANT_ORDER': payment.redsys_reference_gateway,
+            'DS_MERCHANT_MERCHANTCODE': merchant_code,
+            'DS_MERCHANT_TERMINAL': payment.journal.redsys_account.terminal,
+            'DS_MERCHANT_TRANSACTIONTYPE': transaction_type,
+            'DS_MERCHANT_CURRENCY': payment.journal.redsys_account.redsys_currency,
+            'DS_MERCHANT_AMOUNT': amount,
+            }
+
+        client = payment.get_redsys_client(payment.journal)
+        request = client.redsys_generate_reversal_request(values)
+        data = {
+            'Ds_Signature': request['Ds_Signature'],
+            'Ds_SignatureVersion': request['Ds_SignatureVersion'],
+            'Ds_MerchantParameters': request['Ds_MerchantParameters'],
+        }
+        try:
+            response = requests.post(request['Ds_Redsys_Url'], data=data,
+                timeout=60)
+            response.raise_for_status()
+        except requests.exceptions.RequestException as e:
+            self.redsys_error_message = str(e)
+            self.redsys_error_code = e.response.status_code
+            Refund.fail((self,))
+            return '500'
+
+        information = json.loads(response.text)
+        signature = information['Ds_Signature']
+        merchant_parameters = information['Ds_MerchantParameters']
+
+        valid_signature = client.redsys_check_response(
+            signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
+        if not valid_signature:
+            self.redsys_error_message = gettext(
+                'account_payment_redsys.msg_refund_invalid_signature')
+            self.redsys_error_code = 'invalid_signature'
+            Refund.fail((self,))
+            return '500'
+
+        merchant_parameters = client.decode_parameters(merchant_parameters)
+        ds_response = merchant_parameters['Ds_Response']
+
+        if ds_response != '0400':
+            self.redsys_error_message = merchant_parameters['Ds_Response_Description']
+            self.redsys_error_code = ds_response
+            Refund.fail((self,))
+        else:
+            Refund.succeed((self,))
+        return self
