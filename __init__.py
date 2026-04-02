@@ -10,4 +10,5 @@ def register():
         payment.PaymentGroup,
         payment.Payment,
         payment.Account,
+        payment.RedsysRefund,
         module='account_payment_redsys', type_='model')
