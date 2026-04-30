@@ -1,17 +1,6 @@
 #
-# SPDX-FileCopyrightText: 2025 juanjo <juanjo.garcia@nan-tic.com>
 msgid ""
-msgstr ""
-"Content-Type: text/plain; charset=UTF-8\n"
-"Last-Translator: juanjo <juanjo.garcia@nan-tic.com>\n"
-"PO-Revision-Date: 2025-10-01 14:37+0200\n"
-"Project-Id-Version: \n"
-"Language-Team: Catalan <kde-i18n-ca@kde.org>\n"
-"Language: ca_ES\n"
-"Content-Transfer-Encoding: 8bit\n"
-"MIME-Version: 1.0\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 25.08.1\n"
+msgstr "Content-Type: text/plain; charset=utf-8\n"
 
 msgctxt "field:account.payment,redsys_authorisation_code:"
 msgid "Authorisation Code"
@@ -25,6 +14,10 @@ msgctxt "field:account.payment,redsys_reference_gateway:"
 msgid "Reference Gateway"
 msgstr "Porta d'enllaç de referència"
 
+msgctxt "field:account.payment,redsys_refunds:"
+msgid "Refunds"
+msgstr "Reemborsaments"
+
 msgctxt "field:account.payment,redsys_uuid:"
 msgid "UUID"
 msgstr "UUID"
@@ -32,10 +25,6 @@ msgstr "UUID"
 msgctxt "field:account.payment.journal,redsys_account:"
 msgid "Account"
 msgstr "Compte"
-
-msgctxt "field:account.payment.redsys.account,bank_account:"
-msgid "Bank Account"
-msgstr "Compte bancari"
 
 msgctxt "field:account.payment.redsys.account,currency:"
 msgid "Currency"
@@ -57,17 +46,9 @@ msgctxt "field:account.payment.redsys.account,mode:"
 msgid "Mode"
 msgstr "Mode"
 
-msgctxt "field:account.payment.redsys.account,move_journal:"
-msgid "Move Journal"
-msgstr "Diari de moviments"
-
 msgctxt "field:account.payment.redsys.account,name:"
 msgid "Name"
 msgstr "Nom"
-
-msgctxt "field:account.payment.redsys.account,partial_account:"
-msgid "Partial Account"
-msgstr "Compte parcial"
 
 msgctxt "field:account.payment.redsys.account,redsys_currency:"
 msgid "Redsys Currency"
@@ -89,21 +70,33 @@ msgctxt "field:account.payment.redsys.account,transaction_type:"
 msgid "Transaction Type"
 msgstr "Tipus de transacció"
 
-msgctxt "field:account.payment.redsys.account.account,bank_account:"
-msgid "Bank Account"
-msgstr "Compte bancari"
-
-msgctxt "field:account.payment.redsys.account.account,company:"
+msgctxt "field:account.payment.redsys.refund,company:"
 msgid "Company"
 msgstr "Empresa"
 
-msgctxt "field:account.payment.redsys.account.account,move_journal:"
-msgid "Move Journal"
-msgstr "Diari de moviments"
+msgctxt "field:account.payment.redsys.refund,currency:"
+msgid "Currency"
+msgstr "Moneda"
 
-msgctxt "field:account.payment.redsys.account.account,partial_account:"
-msgid "Partial Account"
-msgstr "Compte parcial"
+msgctxt "field:account.payment.redsys.refund,payment:"
+msgid "Payment"
+msgstr "Pagament"
+
+msgctxt "field:account.payment.redsys.refund,reason:"
+msgid "Reason"
+msgstr "Motiu"
+
+msgctxt "field:account.payment.redsys.refund,redsys_error_code:"
+msgid "Redsys Error Code"
+msgstr "Codi d'error de Redsys"
+
+msgctxt "field:account.payment.redsys.refund,redsys_error_message:"
+msgid "Redsys Error Message"
+msgstr "Missatge d'error de Redsys"
+
+msgctxt "field:account.payment.redsys.refund,state:"
+msgid "State"
+msgstr "Estat"
 
 msgctxt "help:account.payment.redsys.account,merchant_code:"
 msgid "Redsys Merchant Code"
@@ -137,13 +130,37 @@ msgctxt "model:account.payment.redsys.account,name:"
 msgid "Redsys Account"
 msgstr "Compte Redsys"
 
-msgctxt "model:account.payment.redsys.account.account,name:"
-msgid "Account Account"
-msgstr "Comptes Contables de Redsys"
+msgctxt "model:account.payment.redsys.refund,name:"
+msgid "Redsys Refund"
+msgstr "Reemborsament de Redsys"
 
 msgctxt "model:ir.action,name:act_account_form"
 msgid "Redsys Accounts"
 msgstr "Comptes de Redsys"
+
+msgctxt "model:ir.action,name:act_refund"
+msgid "Redsys Refunds"
+msgstr "Reemborsaments de Redsys"
+
+msgctxt "model:ir.message,text:msg_refund_invalid_signature"
+msgid ""
+"The refund response returned by Redsys has an invalid signature and could "
+"not be validated."
+msgstr ""
+"La resposta de reemborsament retornada per Redsys té una signatura no vàlida"
+" i no s'ha pogut validar."
+
+msgctxt "model:ir.model.button,string:refund_approve_button"
+msgid "Fail"
+msgstr "Falla"
+
+msgctxt "model:ir.model.button,string:refund_draft_button"
+msgid "Draft"
+msgstr "Esborrany"
+
+msgctxt "model:ir.model.button,string:refund_submit_button"
+msgid "Succeed"
+msgstr "Amb èxit"
 
 msgctxt "model:ir.sequence,name:sequence_payment_redsys"
 msgid "Redsys"
@@ -157,6 +174,10 @@ msgctxt "model:ir.ui.menu,name:menu_account_form"
 msgid "Redsys Accounts"
 msgstr "Comptes de Redsys"
 
+msgctxt "model:ir.ui.menu,name:menu_refund"
+msgid "Redsys Refunds"
+msgstr "Reemborsaments de Redsys"
+
 msgctxt "selection:account.payment.journal,process_method:"
 msgid "Redsys"
 msgstr "Redsys"
@@ -169,6 +190,26 @@ msgctxt "selection:account.payment.redsys.account,mode:"
 msgid "Sandbox"
 msgstr "Proves"
 
+msgctxt "selection:account.payment.redsys.refund,reason:"
+msgid "Invalid Refund"
+msgstr "Reemborsament no vàlid"
+
+msgctxt "selection:account.payment.redsys.refund,reason:"
+msgid "Requested by Customer"
+msgstr "Sol·licitat pel client"
+
+msgctxt "selection:account.payment.redsys.refund,state:"
+msgid "Draft"
+msgstr "Esborrany"
+
+msgctxt "selection:account.payment.redsys.refund,state:"
+msgid "Failed"
+msgstr "Fallat"
+
+msgctxt "selection:account.payment.redsys.refund,state:"
+msgid "Succeeded"
+msgstr "Amb èxit"
+
 msgctxt "view:account.payment.journal:"
 msgid "Redsys"
 msgstr "Redsys"
@@ -176,6 +217,10 @@ msgstr "Redsys"
 msgctxt "view:account.payment.redsys.account:"
 msgid "Redsys Parameters"
 msgstr "Paràmetres de Redsys"
+
+msgctxt "view:account.payment.redsys.refund:"
+msgid "Error"
+msgstr "Error"
 
 msgctxt "view:account.payment:"
 msgid "Authorisation Code:"
