@@ -92,7 +92,7 @@ class Payment(metaclass=PoolMeta):
             Payment.fail(payments)
 
         payment = Payment()
-        payment.description = reference
+        payment.reference = reference
         payment.kind = 'receivable'
         payment.origin = origin
         payment.journal = payment_journal
