@@ -170,11 +170,6 @@ this repository contains the full copyright notices and license terms. -->
             <field name="name">Payment Redsys</field>
         </record>
         <record model="ir.sequence.type-res.group"
-            id="sequence_type_payment_redsys_group_admin">
-            <field name="sequence_type" ref="sequence_type_payment_redsys"/>
-            <field name="group" ref="res.group_admin"/>
-        </record>
-        <record model="ir.sequence.type-res.group"
             id="sequence_type_payment_redsys_group_account_admin">
             <field name="sequence_type" ref="sequence_type_payment_redsys"/>
             <field name="group" ref="account.group_account_admin"/>
