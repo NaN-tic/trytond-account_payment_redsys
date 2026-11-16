@@ -4,13 +4,14 @@ import uuid
 import json
 import requests
 from decimal import Decimal
-from trytond.i18n import gettext
 from trytond.modules.company.model import CompanyMultiValueMixin
 from trytond.model import ModelSQL, ModelView, Workflow, fields
 from trytond.pool import PoolMeta, Pool
 from trytond.pyson import Eval, Id
 from trytond.transaction import Transaction
 from redsys import Client
+
+REDSYS_SIGNATURE_VERSION = 'HMAC_SHA256_V1'
 
 
 class PaymentJournal(metaclass=PoolMeta):
@@ -73,6 +74,43 @@ class Payment(metaclass=PoolMeta):
             business_code=merchant_code, secret_key=merchant_secret_key)
 
     @classmethod
+    def get_verified_redsys_data(cls, merchant_parameters, signature,
+            signature_version, journal):
+        """Return signed Redsys data from parameters collected by the caller.
+
+        Raise ValueError for missing, malformed or unauthenticated parameters.
+        This does not look up a payment or establish whether it succeeded.
+        """
+        if not (merchant_parameters and signature and signature_version):
+            raise ValueError('Missing Redsys parameters')
+        if signature_version != REDSYS_SIGNATURE_VERSION:
+            raise ValueError('Unsupported Redsys signature version')
+
+        client = cls.get_redsys_client(journal)
+        try:
+            valid_signature = client.redsys_check_response(
+                signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
+        except (AssertionError, AttributeError, KeyError, TypeError,
+                ValueError) as exception:
+            raise ValueError('Malformed Redsys parameters') from exception
+        if not valid_signature:
+            raise ValueError('Invalid Redsys signature')
+
+        data = client.decode_parameters(merchant_parameters)
+        if not isinstance(data, dict):
+            raise ValueError('Redsys merchant parameters must be a JSON object')
+        order = data.get('Ds_Order')
+        if (not isinstance(order, str) or not order
+                or not order.isascii() or not order.isalnum() or len(order) > 12):
+            raise ValueError('Invalid Redsys order reference')
+
+        response = str(data.get('Ds_Response', ''))
+        if (not response.isascii() or not response.isdigit()
+                or not 0 <= int(response) <= 9999):
+            raise ValueError('Invalid Redsys response code')
+        return data
+
+    @classmethod
     def create_redsys_payment(cls, reference, origin, redsys_reference, party,
             amount, currency, payment_journal, merchant_url, url_ok, url_ko,
             paymethod=None):
@@ -133,7 +171,6 @@ class Payment(metaclass=PoolMeta):
     def redsys_ipn(cls, payment_journal, merchant_parameters, signature):
         pool = Pool()
         Payment = pool.get('account.payment')
-        Group = pool.get('account.payment.group')
         """
         Signal Redsys confirmation payment
 
@@ -161,53 +198,60 @@ class Payment(metaclass=PoolMeta):
 
         merchant_parameters = redsyspayment.decode_parameters(merchant_parameters)
 
-        reference = merchant_parameters.get('Ds_Order')
-        authorisation_code = merchant_parameters.get('Ds_AuthorisationCode')
-        amount = merchant_parameters.get('Ds_Amount', 0)
-        response = merchant_parameters.get('Ds_Response')
-
-        log = "\n".join([('%s: %s' % (k, v)) for k, v in
-            merchant_parameters.items()])
-
-        # Search payment
         payments = Payment.search([
-            ('redsys_reference_gateway', '=', reference),
-            ('state', '=', 'draft'),
+            ('redsys_reference_gateway', '=', merchant_parameters.get('Ds_Order')),
+            ('journal', '=', payment_journal),
             ], limit=1)
-        if payments:
-            payment, = payments
-        else:
-            payment = Payment()
-            payment.reference = reference
-            payment.journal = payment_journal
-            payment.redsys_reference_gateway = reference
-        payment.redsys_authorisation_code = authorisation_code
-        payment.amount = Decimal(amount)/100
-        payment.redsys_gateway_log = log
-        payment.save()
+        if not payments:
+            return '500'
+        payment, = payments
+        return payment.process_redsys_data(merchant_parameters)
+
+    def process_redsys_data(self, data):
+        """Process this payment using already verified Redsys data."""
+        pool = Pool()
+        Payment = pool.get('account.payment')
+        Group = pool.get('account.payment.group')
+
+        Payment.lock((self,))
+        response = data.get('Ds_Response')
+        if self.state != 'draft':
+            if self.state not in {'succeeded', 'failed'}:
+                return '500'
+            if (self.state == 'succeeded') != (int(response) < 100):
+                return '500'
+            if any(refund.reason == 'invalid'
+                    for refund in self.redsys_refunds):
+                return '500'
+            return response
+        self.redsys_authorisation_code = data.get('Ds_AuthorisationCode')
+        self.amount = Decimal(data.get('Ds_Amount', 0))/100
+        self.redsys_gateway_log = "\n".join([
+            '%s: %s' % (k, v) for k, v in data.items()])
+        self.save()
 
         # Process transaction 0000 - 0099: Done
-        cls.submit([payment])
+        Payment.submit([self])
         # Create payment group (needed in account.payment)
         # TODO: The group is optional in version 7.6 and above:
         # https://foss.heptapod.net/tryton/tryton/-/commit/55db7836e13205b986ba644017973ba1e2024bd6
         group_values = {
-            'company': payment.company.id,
-            'journal': payment.journal.id,
-            'kind': payment.kind,
+            'company': self.company.id,
+            'journal': self.journal.id,
+            'kind': self.kind,
         }
         group = Group(**group_values)
         group.save()
-        payment.group = group
-        payment.save()
-        cls.proceed([payment])
+        self.group = group
+        self.save()
+        Payment.proceed([self])
 
         if int(response) < 100:
-            cls.succeed([payment])
-            if not payment.__valid_redsys_payment(merchant_parameters):
+            Payment.succeed([self])
+            if not self.__valid_redsys_payment(data):
                 return '500'
         else:
-            cls.fail([payment])
+            Payment.fail([self])
         return response
 
     def __valid_redsys_payment(self, merchant_parameters):
@@ -420,19 +464,17 @@ class RedsysRefund(Workflow, ModelSQL, ModelView):
             return '500'
 
         information = json.loads(response.text)
-        signature = information['Ds_Signature']
-        merchant_parameters = information['Ds_MerchantParameters']
-
-        valid_signature = client.redsys_check_response(
-            signature.encode('utf-8'), merchant_parameters.encode('utf-8'))
-        if not valid_signature:
-            self.redsys_error_message = gettext(
-                'account_payment_redsys.msg_refund_invalid_signature')
+        try:
+            merchant_parameters = payment.get_verified_redsys_data(
+                information.get('Ds_MerchantParameters'),
+                information.get('Ds_Signature'),
+                information.get('Ds_SignatureVersion'), payment.journal)
+        except ValueError as exception:
+            self.redsys_error_message = str(exception)
             self.redsys_error_code = 'invalid_signature'
             Refund.fail((self,))
             return '500'
 
-        merchant_parameters = client.decode_parameters(merchant_parameters)
         ds_response = merchant_parameters['Ds_Response']
 
         if ds_response != '0400':
